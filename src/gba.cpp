@@ -82,6 +82,7 @@ inline static long min(long p, int q) { return p < q ? p : q; }
 inline static long min(int p, long q) { return p < q ? p : q; }
 inline static long min(long p, long q) { return p < q ? p : q; }
 
+/*
 uint8_t *rom = 0;
 uint8_t *bios = 0;
 uint8_t *vram = 0;
@@ -90,7 +91,17 @@ uint8_t *oam = 0;
 uint8_t *ioMem = 0;
 uint8_t *internalRAM = 0;
 uint8_t *workRAM = 0;
-uint8_t *paletteRAM = 0;
+uint8_t *paletteRAM = 0;*/
+
+uint8_t rom [0x2000000];
+uint8_t bios[0x4000];
+uint8_t vram[0x20000];
+uint16_t pix[4 * PIX_BUFFER_SCREEN_WIDTH * 160];
+uint8_t oam [0x400];
+uint8_t ioMem[0x400];
+uint8_t internalRAM[0x8000];
+uint8_t workRAM[0x40000];
+uint8_t paletteRAM[0x400];
 char cartridgeCode[4];
 
 int renderfunc_mode = 0;
@@ -9031,61 +9042,17 @@ static bool CPUIsELF(const char *file)
 
 void CPUCleanUp (void)
 {
-	if(rom != NULL) {
-		memalign_free(rom);
-		rom = NULL;
-	}
-
-	if(vram != NULL) {
-		memalign_free(vram);
-		vram = NULL;
-	}
-
-	if(paletteRAM != NULL) {
-		memalign_free(paletteRAM);
-		paletteRAM = NULL;
-	}
-
-	if(internalRAM != NULL) {
-		memalign_free(internalRAM);
-		internalRAM = NULL;
-	}
-
-	if(workRAM != NULL) {
-		memalign_free(workRAM);
-		workRAM = NULL;
-	}
-
-	if(bios != NULL) {
-		memalign_free(bios);
-		bios = NULL;
-	}
-
-	if(pix != NULL) {
-		memalign_free(pix);
-		pix = NULL;
-	}
-
-	if(oam != NULL) {
-		memalign_free(oam);
-		oam = NULL;
-	}
-
-	if(ioMem != NULL) {
-		memalign_free(ioMem);
-		ioMem = NULL;
-	}
 
 }
 
 bool CPUSetupBuffers()
 {
 	romSize = 0x2000000;
-	if(rom != NULL)
-		CPUCleanUp();
+
 
 	//systemSaveUpdateCounter = SYSTEM_SAVE_NOT_UPDATED;
 
+/*
 	rom = (uint8_t *)memalign_alloc_aligned(0x2000000);
 	workRAM = (uint8_t *)memalign_alloc_aligned(0x40000);
 	bios = (uint8_t *)memalign_alloc_aligned(0x4000);
@@ -9095,8 +9062,9 @@ bool CPUSetupBuffers()
 	oam = (uint8_t *)memalign_alloc_aligned(0x400);
 	pix = (uint16_t *)memalign_alloc_aligned(4 * PIX_BUFFER_SCREEN_WIDTH * 160);
 	ioMem = (uint8_t *)memalign_alloc_aligned(0x400);
+*/
 
-	memset(rom, 0, 0x2000000);
+	//memset(rom, 0, 0x2000000);
 	memset(workRAM, 1, 0x40000);
 	memset(bios, 1, 0x4000);
 	memset(internalRAM, 1, 0x8000);
@@ -9105,13 +9073,6 @@ bool CPUSetupBuffers()
 	memset(oam, 1, 0x400);
 	memset(pix, 1, 4 * PIX_BUFFER_SCREEN_WIDTH * 160);
 	memset(ioMem, 1, 0x400);
-
-	if(rom == NULL || workRAM == NULL || bios == NULL ||
-	   internalRAM == NULL || paletteRAM == NULL ||
-	   vram == NULL || oam == NULL || pix == NULL || ioMem == NULL) {
-		CPUCleanUp();
-		return false;
-	}
 
 	flashInit();
 	eepromInit();
@@ -9164,47 +9125,17 @@ static void applyCartridgeOverride(char* code) {
 
 int CPULoadRom(const char * file)
 {
-	if (!CPUSetupBuffers()) return 0;
-
-	uint8_t *whereToLoad = cpuIsMultiBoot ? workRAM : rom;
-
-	if(file != NULL)
-	{
-		if(!utilLoad(file,
-					utilIsGBAImage,
-					whereToLoad,
-					romSize)) {
-			memalign_free(rom);
-			rom = NULL;
-			memalign_free(workRAM);
-			workRAM = NULL;
-			return 0;
-		}
-	}
-
-	//load cartridge code
-	memcpy(cartridgeCode, whereToLoad + 0xAC, 4);
-	applyCartridgeOverride(cartridgeCode);
-
-	uint16_t *temp = (uint16_t *)(rom+((romSize+1)&~1));
-	int i;
-
-	for(i = (romSize+1)&~1; i < 0x2000000; i+=2) {
-		WRITE16LE(temp, (i >> 1) & 0xFFFF);
-		temp++;
-	}
-
-	return romSize;
+	return -1;
 }
 
-int CPULoadRomData(const char *data, int size)
+int CPUAfterRomLoaded(int size)
 {
 	if (!CPUSetupBuffers()) return 0;
-
+	cpuIsMultiBoot = false;
 	uint8_t *whereToLoad = cpuIsMultiBoot ? workRAM : rom;
 
 	romSize = size % 2 == 0 ? size : size + 1;
-	memcpy(whereToLoad, data, size);
+	//memcpy(whereToLoad, data, size);
 
 	//load cartridge code
 	memcpy(cartridgeCode, whereToLoad + 0xAC, 4);

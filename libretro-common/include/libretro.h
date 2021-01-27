@@ -2736,7 +2736,7 @@ RETRO_API void retro_cheat_set(unsigned index, bool enabled, const char *code);
 /* Loads a game.
  * Return true to indicate successful loading and false to indicate load failure.
  */
-RETRO_API bool retro_load_game(const struct retro_game_info *game);
+RETRO_API bool retro_load_game(int gameSize);
 
 /* Loads a "special" kind of game. Should not be used,
  * except in extreme cases. */

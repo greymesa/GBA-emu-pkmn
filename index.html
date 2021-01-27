@@ -6,32 +6,50 @@
     <meta charset="utf-8">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, user-scalable=no">
+    <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height">
+    <link rel="apple-touch-icon" href="icon.png">
     <title>GBA Player</title>
+
 </head>
 
 <body>
     <style>
-        a, a:visited {
+        a,
+        a:visited {
             color: white;
         }
-        html, body {
+
+        html,
+        body {
             position: fixed;
             overflow: hidden;
-        }
-        body {
             -webkit-user-select: none;
             user-select: none;
+            -webkit-touch-callout:none;
+            touch-action: none;
+            cursor: inherit;
+        }
+
+        body {
+
             background-color: #000000;
             color: #FFFFFF;
             padding: 0;
             margin: 0;
             width: 100vw;
             height: 100vh;
+            font-family: 'Myriad Set Pro','Helvetica Neue',Helvetica,Arial,sans-serif;
+        }
+
+        hr {
+            color: white;
         }
 
         button {
-            padding: 1em;
+            border: 2px solid white;
+            background: transparent;
+            color: white;
+            padding: .5em;
         }
 
         .vk-round {
@@ -52,12 +70,16 @@
             display: inline-block;
         }
 
+        .vk-hide {
+            background-color: transparent !important
+        }
+
         .vk-touched {
             background-color: rgba(255, 255, 255, 0.75) !important
         }
 
         .menu {
-            background: #202b38;
+            background: rgb(32,43,56);
             position: absolute;
             left: 0;
             top: 0;
@@ -79,6 +101,7 @@
             width: 100%;
             height: 100%;
             z-index: 3;
+            touch-action: none;
         }
 
         #msg-layer {
@@ -86,7 +109,7 @@
             left: 0;
             width: 100%;
             top: 40vh;
-            background: #000000;
+            background:rgba(0,0,0,0.5);
             z-index: 2;
         }
     </style>
@@ -101,42 +124,38 @@
         <hr>
         Savegame management:<br>
         <button onclick="savBackupBtn()">Backup</button>
+        <input type="file" id="sav-file" />
         <button onclick="savRestoreBtn()">Restore</button>
     </div>
     <div id="welcome" class="menu">
-
-        <h1>GBA Player</h1>
-        V1.3<br>
-        <a href="https://github.com/44670/vba-next-wasm">https://github.com/44670/vba-next-wasm</a>
+        <h2>GBA Player</h2>
         <hr>
         <div id="wasm-loading">
             Loading WebAssembly, please wait...
         </div>
         <div id="select-rom" hidden>
             <p>Select a homebrew game to start with:</p>
-            <select id="homebrew-list">
+            <select style="padding:.5em;" onchange="onHomebrewListSelected()" id="homebrew-list">
+                <option value=""></option>
+                <option value="goodBoyAdv">goodboyAdv</option>
                 <option value="powder118">powder118</option>
-                <option value="thelastseal">thelastseal</option>
-                <option value="thetemple">thetemple</option>
-                <option value="Jespa3D_1_39">Jespa3D_1_39</option>
-                <option value="anguna">anguna</option>
+                <option value="2004Mbit">2004Mbit</option>
             </select>
-            <p>or choose you own file:<br><input type="file" id="romFile" style="width:100%" /></p>
-            <button onclick="loadButtonClick()" style="width:10em;">Load</button><br>
-        </div>
-        <div>
-            Hints For iOS:<br>
-            <ol>
-                <li>Add this page to the home screen and it will run full screen.</li>
-            </ol>
-        </div>
 
+            <p>or choose you own file:<br><input style="padding:.5em; border:2px solid white;" type="file" id="romFile"
+                    onchange="onFileSelected()" /></p>
+
+        </div>
         <hr>
+        Ver. 20210114 | <a target="_blank"
+            href="https://github.com/44670/vba-next-wasm">https://github.com/44670/vba-next-wasm</a>
+        <div id="ios-hint" hidden>
+            Due to limitations of iOS, please <b>add this page to the home screen</b> and launch it from the home screen icon to enable features including savegame and full screen.
+            <p style="text-align: center;">👇</p>
+        </div>
     </div>
     <div id="msg-layer" hidden>
-        <hr>
         <p id="msg-text"></p>
-        <hr>
     </div>
     <div id="vk-layer" hidden>
         <div class="vk-rect vk" data-k="menu">Menu</div>
@@ -151,28 +170,43 @@
         <div class=" vk" data-k="right">→</div>
         <div class=" vk" data-k="up">↑</div>
         <div class=" vk" data-k="down">↓</div>
-
+        <div class=" vk vk-hide" style="background-color: transparent !important" data-k="ul"></div>
+        <div class=" vk vk-hide" style="background-color: transparent !important" data-k="ur"></div>
+        <div class=" vk vk-hide" style="background-color: transparent !important" data-k="dl"></div>
+        <div class=" vk vk-hide" style="background-color: transparent !important" data-k="dr"></div>
     </div>
-    <canvas width="240" height="160" id="gba-canvas" style="image-rendering: pixelated;"></canvas>
+    <canvas width="240" height="160" id="gba-canvas" style="touch-action: none;image-rendering: pixelated;"></canvas>
     <script src="localforage.js?v=20191120"></script>
-    <script src="a.out.js?v=20191120"></script>
     <script>
         if (!window.WebAssembly) {
             alert('Sorry, your browser does not support WebAssembly. :(')
-        }
+        } 
 
         window.onerror = function (msg, url, line, col, error) {
             var extra = !col ? '' : '\ncolumn: ' + col;
             extra += !error ? '' : '\nerror: ' + error;
             alert("Error: " + msg + "\nurl: " + url + "\nline: " + line + extra);
             window.onerror = console.log
+            debugger
             return true;
         };
 
         var isIOS = !!navigator.platform && /iPad|iPhone|iPod/.test(navigator.platform);
+        var isWebApp = navigator.standalone || false
+        var isSaveSupported = true
         if (isIOS) {
-            document.getElementById('romFile').files = null;
+            //document.getElementById('romFile').files = null;
+            if (!isWebApp) {
+                // On iOS Safari, the indexedDB will be cleared after 7 days. 
+                // To prevent users from frustration, we don't allow savegaming on iOS unless the we are in the PWA mode.
+                isSaveSupported = false
+                alert('Due to limitations of iOS, please add this page to the home screen and launch it from the home screen icon to enable features including savegame and full screen.')
+                var divIosHint = document.getElementById('ios-hint')
+                divIosHint.hidden = false
+                divIosHint.style = 'position: absolute; bottom: '+ divIosHint.clientHeight  + 'px;'
+            }
         }
+        document.getElementById('homebrew-list').selectedIndex = 0
 
         var keyState = {
         };
@@ -213,6 +247,9 @@
         var turboMode = false
         var turboInterval = -1
 
+        var gbaWidth
+        var gbaHeight
+
 
 
 
@@ -251,6 +288,9 @@
         // must be called in user gesture
         function tryInitSound() {
             if (audioContext) {
+                if (audioContext.state != 'running') {
+                    audioContext.resume()
+                }
                 return;
             }
             try {
@@ -262,7 +302,7 @@
                 audioContext.resume()
             } catch (e) {
                 console.log(e)
-                alert('Cannnot init sound ')
+                //alert('Cannnot init sound ')
             }
         }
 
@@ -299,7 +339,7 @@
         }
 
         function wasmReady() {
-            romBuffer = Module._malloc(33 * 1024 * 1024)
+            romBuffer = Module._getBuffer(1)
             var ptr = Module._getBuffer(0)
             wasmSaveBuf = Module.HEAPU8.subarray(ptr, ptr + wasmSaveBufLen)
             isWasmReady = true
@@ -332,11 +372,27 @@
         }
 
         function savBackupBtn() {
-            var blob = new Blob(wasmSaveBuf, {type: "application/binary"});
+            var blob = new Blob([wasmSaveBuf], { type: "application/binary" });
             var link = document.createElement("a");
             link.href = window.URL.createObjectURL(blob);
             link.download = 'save-' + gameID + '.44gbasav';
             link.click();
+        }
+
+        function savRestoreBtn() {
+            var file = document.getElementById('sav-file').files[0]
+            if (file) {
+                var fileReader = new FileReader()
+                fileReader.onload = function (event) {
+                    var arrayBuffer = event.target.result
+                    var u8 = new Uint8Array(arrayBuffer)
+                    wasmSaveBuf.set(u8)
+                    alert('sav file loaded')
+                    Module._resetCpu()
+                    clearSaveBufState()
+                };
+                fileReader.readAsArrayBuffer(file)
+            }
         }
 
         function loadRomArrayBuffer(arrayBuffer) {
@@ -358,7 +414,7 @@
             }
             console.log('gameID', gameID)
             Module.HEAPU8.set(u8, romBuffer)
-            var ret = Module._loadRom(romBuffer, u8.length)
+            var ret = Module._loadRom(u8.length)
             document.getElementById('welcome').hidden = true
             loadSaveGame(0, function () {
                 Module._resetCpu()
@@ -367,7 +423,26 @@
 
         }
 
-        function loadButtonClick() {
+        function onHomebrewListSelected() {
+            if (!isWasmReady) {
+                alert('WASM not ready!')
+                return
+            }
+            tryInitSound()
+            var fn = document.getElementById('homebrew-list').value
+            if (fn == '') {
+                return
+            }
+            romFileName = fn
+            document.getElementById('select-rom').innerText = 'Downloading...'
+            fetch('roms/' + fn + '.gba').then(function (resp) {
+                resp.arrayBuffer().then(function (ab) {
+                    loadRomArrayBuffer(ab)
+                })
+            });
+        }
+
+        function onFileSelected() {
             if (!isWasmReady) {
                 alert('WASM not ready!')
                 return
@@ -383,15 +458,6 @@
                     loadRomArrayBuffer(arrayBuffer)
                 };
                 fileReader.readAsArrayBuffer(file)
-            } else {
-                var fn = document.getElementById('homebrew-list').value
-                romFileName = fn
-                document.getElementById('select-rom').innerText = 'Loading...'
-                fetch(fn + '.gba').then(function (resp) {
-                    resp.arrayBuffer().then(function (ab) {
-                        loadRomArrayBuffer(ab)
-                    })
-                });
             }
 
         }
@@ -400,7 +466,11 @@
         function emuRunFrame() {
             if (isRunning) {
                 frameCnt++
+                if (frameCnt % 60 == 0) {
+                    checkSaveBufState()
+                }
                 if (frameCnt % 128 == 0) {
+                    
                     if (last128FrameTime) {
                         var diff = performance.now() - last128FrameTime
                         var frameInMs = diff / 128
@@ -441,6 +511,67 @@
         }
 
 
+        function adjustVKLayout() {
+            var isLandscape = window.innerWidth > window.innerHeight
+            var baseSize = Math.min(Math.min(window.innerWidth, window.innerHeight) * 0.14, 50)
+            var fontSize = baseSize * 0.7
+            var offTop = 0
+            var offLeft = 0
+
+            if (!isLandscape) {
+                offTop = gbaHeight + baseSize
+                if ((offTop + baseSize * 7) > window.innerHeight) {
+                    offTop = 0
+                }
+            } 
+
+            var vkw = baseSize * 3
+            var vkh = baseSize 
+            
+            keyState['l'][0].style = makeVKStyle(offTop + baseSize * 1.5, 0, vkw, vkh, fontSize)
+            keyState['r'][0].style = makeVKStyle(offTop + baseSize * 1.5, window.innerWidth - vkw, vkw, vkh, fontSize)
+
+            vkh = baseSize * 0.5
+            keyState['turbo'][0].style = makeVKStyle(offTop + baseSize * 0.5, 0, vkw, vkh, fontSize)
+            keyState['menu'][0].style = makeVKStyle(offTop + baseSize * 0.5, window.innerWidth - vkw, vkw, vkh, fontSize)
+
+            vkh = baseSize
+            vkw = baseSize
+            offTop += baseSize * 3
+            /*
+            offLeft = isLandscape ? (baseSize * 1) : 0
+            if (baseSize * 6 > window.innerWidth) {
+                offLeft = 0
+            }*/
+            offLeft = 0
+            
+            keyState['up'][0].style = makeVKStyle(offTop, offLeft + vkw, vkw, vkh, fontSize)
+            keyState['ul'][0].style = makeVKStyle(offTop, offLeft, vkw, vkh, fontSize)
+            keyState['ur'][0].style = makeVKStyle(offTop, offLeft + vkw * 2, vkw, vkh, fontSize)
+            keyState['down'][0].style = makeVKStyle(offTop + vkh * 2, offLeft + vkw, vkw, vkh, fontSize)
+            keyState['dl'][0].style = makeVKStyle(offTop + vkh * 2, offLeft, vkw, vkh, fontSize)
+            keyState['dr'][0].style = makeVKStyle(offTop + vkh * 2, offLeft + vkw * 2, vkw, vkh, fontSize)
+            keyState['left'][0].style = makeVKStyle(offTop + vkh, offLeft + 0, vkw, vkh, fontSize)
+            keyState['right'][0].style = makeVKStyle(offTop + vkh, offLeft + vkw * 2, vkw, vkh, fontSize)
+            abSize = vkw * 1.3
+            keyState['a'][0].style = makeVKStyle(offTop + vkh - baseSize * 0.5, window.innerWidth - abSize, abSize, abSize, fontSize)
+            keyState['b'][0].style = makeVKStyle(offTop + vkh, window.innerWidth - abSize * 2.4, abSize, abSize, fontSize)
+
+            vkh = baseSize * 0.5
+            vkw = baseSize * 3
+
+            offLeft = (window.innerWidth - vkw * 2.2) / 2
+            offTop += baseSize * 3 + baseSize * 0.5
+            if (isLandscape) {
+                offTop = window.innerHeight - vkh
+            }
+
+            keyState['select'][0].style = makeVKStyle(offTop, offLeft , vkw, vkh, fontSize)
+            keyState['start'][0].style = makeVKStyle(offTop, offLeft + vkw * 1.2 , vkw, vkh, fontSize)
+
+            
+        }
+
         function adjustSize() {
             var gbaMaxWidth = window.innerWidth
             var gbaMaxHeight = window.innerHeight - 20
@@ -451,40 +582,12 @@
                 h = gbaMaxHeight
                 w = h / 160 * 240
             }
-            var scaleFator = (w / 240 + 0.05) // | 0
-            var gbaWidth = 240 * scaleFator
-            var gbaHeight = 160 * scaleFator
+            var scaleFator = (w / 240) // | 0
+            gbaWidth = 240 * scaleFator
+            gbaHeight = 160 * scaleFator
             l += (window.innerWidth - gbaWidth) / 2;
-            x = 'width:' + gbaWidth + 'px;height:' + gbaHeight + 'px;left:' + l + 'px;'
-            canvas.style = x
-            var fontSize = w * 0.06
-            var vkw = w * 0.2
-            var vkh = fontSize
-            var vktop = window.innerHeight - (w * 0.4)
-            keyState['l'][0].style = makeVKStyle(vktop, 0, vkw, vkh, fontSize)
-            keyState['r'][0].style = makeVKStyle(vktop, window.innerWidth - vkw, vkw, vkh, fontSize)
-            keyState['turbo'][0].style = makeVKStyle(vktop - vkh - w * 0.02, 0, vkw, vkh, fontSize)
-            vktop += w * 0.12
-            vkw = w * 0.08
-            vkh = w * 0.08
-            var off = 0
-            keyState['up'][0].style = makeVKStyle(vktop, off + vkw, vkw, vkh, fontSize)
-            //keyState['ul'][0].style = makeVKStyle(vktop, off, vkw, vkh, fontSize)
-            //keyState['ur'][0].style = makeVKStyle(vktop, off + vkw * 2, vkw, vkh, fontSize)
-            keyState['down'][0].style = makeVKStyle(vktop + vkh * 2, off + vkw, vkw, vkh, fontSize)
-            //keyState['dl'][0].style = makeVKStyle(vktop + vkh * 2, off, vkw, vkh, fontSize)
-            //keyState['dr'][0].style = makeVKStyle(vktop + vkh * 2, off + vkw * 2, vkw, vkh, fontSize)
-            keyState['left'][0].style = makeVKStyle(vktop + vkh, off + 0, vkw, vkh, fontSize)
-            keyState['right'][0].style = makeVKStyle(vktop + vkh, off + vkw * 2, vkw, vkh, fontSize)
-            vkw = w * 0.2
-            vkh = fontSize
-            keyState['select'][0].style = makeVKStyle(window.innerHeight - vkh, (window.innerWidth - vkw) / 2 - w * 0.21, vkw, vkh, fontSize)
-            keyState['start'][0].style = makeVKStyle(window.innerHeight - vkh, (window.innerWidth - vkw) / 2 + w * 0.21, vkw, vkh, fontSize)
-            keyState['menu'][0].style = makeVKStyle(window.innerHeight - vkh, (window.innerWidth - vkw) / 2, vkw, vkh, fontSize)
-            vkw = w * 0.1
-            vkh = w * 0.1
-            keyState['a'][0].style = makeVKStyle(vktop + w * 0.07, window.innerWidth - vkw, vkw, vkh, fontSize)
-            keyState['b'][0].style = makeVKStyle(vktop + w * 0.12, window.innerWidth - vkw - w * 0.15, vkw, vkh, fontSize)
+            canvas.style = 'width:' + gbaWidth + 'px;height:' + gbaHeight + 'px;left:' + l + 'px;'
+            adjustVKLayout()
         }
 
         window.onresize = adjustSize
@@ -493,10 +596,12 @@
 
 
         function handleTouch(event) {
+            tryInitSound()
             if (!isRunning) {
                 return
             }
             event.preventDefault();
+            event.stopPropagation();
             document.getElementById('vk-layer').hidden = false
             for (var k in keyState) {
                 keyState[k][2] = 0
@@ -554,13 +659,17 @@
                 window.ontouchmove = handleTouch;
                 window.ontouchcancel = handleTouch;
                 window.ontouchend = handleTouch;*/
+ 
+                //'touchcancel', , 'touchforcechange'
+        ['touchstart', 'touchmove',  'touchend', 'touchcancel', 'touchenter', 'touchleave'].forEach((val) => {
+            window.addEventListener(val, handleTouch)
+        })
 
-        // Or we have to register ontouchforcechange
-        window.ontouchstart = handleTouch;
-        window.ontouchmove = handleTouch;
-        window.ontouchcancel = handleTouch;
-        window.ontouchend = handleTouch;
-        window.ontouchforcechange = handleTouch;
+        document.getElementById('vk-layer').ontouchstart = (e) => {
+            e.preventDefault()
+        }
+
+
 
         function getVKState() {
             var ret = 0;
@@ -586,12 +695,13 @@
         }
 
         document.onkeydown = function (e) {
+            tryInitSound()
             console.log(e.keyCode)
             if (!isRunning) {
                 return
             }
             e.preventDefault()
-            
+
             var k = convertKeyCode(e.keyCode)
             if (k >= 0) {
                 keyState[keyList[k]][1] = 1
@@ -618,7 +728,7 @@
             }
             var state = Module._updateSaveBufState()
             //console.log(state)
-            if ((lastCheckedSaveState == 1) && (state == 0)) {
+            if ((lastCheckedSaveState == 1) && (state == 0) && (isSaveSupported))  {
                 showMsg('Auto saving, please wait...')
                 saveSaveGame(0, function () {
                     console.log('save done')
@@ -632,7 +742,6 @@
             Module._updateSaveBufState()
         }
 
-        setInterval(checkSaveBufState, 1000)
 
         function showMsg(msg) {
             document.getElementById('msg-text').innerText = msg
@@ -691,6 +800,8 @@
 
     </script>
 
+
+    <script src="a.out.js?v=20210114"></script>
 
 </body>
 

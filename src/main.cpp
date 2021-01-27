@@ -68,16 +68,16 @@ size_t myAudioBatchCb(const int16_t *data, size_t frames)
     return 0;
 }
 
+extern uint8_t rom [0x2000000];
+
 extern "C"
 {
 
 
-    int loadRom(void *romBuffer, uint32_t romSize)
+    int loadRom(int romSize)
     {
-        gameInfo.path = "game.gba";
-        gameInfo.data = romBuffer;
-        gameInfo.size = romSize;
-        int ret = retro_load_game(&gameInfo) ? 0 : -1;
+
+        int ret = retro_load_game(romSize) ? 0 : -1;
         return ret;
     }
 
@@ -95,7 +95,7 @@ extern "C"
             return libretro_save_buf;
         }
         if (bufid == 1) {
-
+            return rom;
         }
         return 0;
     }

@@ -23,14 +23,14 @@ extern bool skipSaveGameBattery; // skip battery data when reading save states
 
 extern int cpuDmaCount;
 
-extern uint8_t *rom;
-extern uint8_t *bios;
-extern uint8_t *vram;
-extern uint16_t *pix;
-extern uint8_t *oam;
-extern uint8_t *ioMem;
-extern uint8_t *internalRAM;
-extern uint8_t *workRAM;
-extern uint8_t *paletteRAM;
+extern uint8_t rom[];
+extern uint8_t bios[];
+extern uint8_t vram[];
+extern uint16_t pix[];
+extern uint8_t oam[];
+extern uint8_t ioMem[];
+extern uint8_t internalRAM[];
+extern uint8_t workRAM[];
+extern uint8_t paletteRAM[];
 
 #endif // GLOBALS_H

@@ -462,9 +462,6 @@ static void gba_init(void)
 
    soundReset();
 
-   uint8_t * state_buf = (uint8_t*)malloc(2000000);
-   serialize_size = CPUWriteState(state_buf, 2000000);
-   free(state_buf);
 
 #if USE_FRAME_SKIP
    SetFrameskip(get_frameskip_code());
@@ -640,7 +637,7 @@ void retro_cheat_set(unsigned index, bool enabled, const char *code)
    free(codeLine) ;
 }
 
-bool retro_load_game(const struct retro_game_info *game)
+bool retro_load_game(int gameSize)
 {
    update_variables();
 
@@ -661,11 +658,7 @@ bool retro_load_game(const struct retro_game_info *game)
 
    environ_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, desc);
 
-#ifdef GEKKO
-	bool ret = CPULoadRom(game->path);
-#else
-   bool ret = CPULoadRomData((const char*)game->data, game->size);
-#endif
+   bool ret = CPUAfterRomLoaded(gameSize);
 
    gba_init();
 
