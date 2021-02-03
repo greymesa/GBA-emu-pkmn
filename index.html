@@ -265,14 +265,11 @@
                 }
                 return
             }
-
-
-            if (!lowLatencyMode) {
-                while (audioFifoCnt < AUDIO_BLOCK_SIZE) {
-                    //console.log('audio fifo underflow, running a new frame')
-                    emuRunFrame();
-                }
+            while (audioFifoCnt < AUDIO_BLOCK_SIZE) {
+                //console.log('audio fifo underflow, running a new frame')
+                emuRunFrame();
             }
+
             var copySize = AUDIO_BLOCK_SIZE
             if (audioFifoCnt < copySize) {
                 copySize = audioFifoCnt
@@ -488,6 +485,7 @@
             }
         }
 
+        
         function emuLoop() {
             window.requestAnimationFrame(emuLoop)
             emuRunFrame()
@@ -797,6 +795,19 @@
         window.addEventListener("gamepadconnected", function (e) {
             console.log("Gamepad connected")
         });
+
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('sw.js').then(function (registration) {
+                    // Registration was successful
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                }, function (err) {
+                    // registration failed :(
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+            });
+        }
 
     </script>
 
