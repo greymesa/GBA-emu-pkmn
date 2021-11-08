@@ -431,6 +431,7 @@
                 return
             }
             romFileName = fn
+            console.log('roms/' + romFileName + '.gba');
             document.getElementById('select-rom').innerText = 'Downloading...'
             fetch('roms/' + fn + '.gba').then(function (resp) {
                 resp.arrayBuffer().then(function (ab) {
