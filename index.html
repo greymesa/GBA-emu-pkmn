@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height">
     <link rel="apple-touch-icon" href="icon.png">
-    <title>GBA Player</title>
+    <title>GBA Pokemon Player</title>
 
 </head>
 
@@ -79,7 +79,7 @@
         }
 
         .menu {
-            background: rgb(32,43,56);
+            background: rgb(31, 30, 30);
             position: absolute;
             left: 0;
             top: 0;
@@ -128,18 +128,20 @@
         <button onclick="savRestoreBtn()">Restore</button>
     </div>
     <div id="welcome" class="menu">
-        <h2>GBA Player</h2>
+        <h2>GBA Pokemon Player</h2>
         <hr>
         <div id="wasm-loading">
             Loading WebAssembly, please wait...
         </div>
         <div id="select-rom" hidden>
-            <p>Select a homebrew game to start with:</p>
+            <p>Select a Pokemon game to start with:</p>
             <select style="padding:.5em;" onchange="onHomebrewListSelected()" id="homebrew-list">
                 <option value=""></option>
-                <option value="goodBoyAdv">goodboyAdv</option>
-                <option value="powder118">powder118</option>
-                <option value="2004Mbit">2004Mbit</option>
+                <option value="red">Pokemon FireRed</option>
+                <option value="green">Pokemon LeafGreen</option>
+                <option value="ruby">Pokemon Ruby</option>
+                <option value="sapphire">Pokemon Sapphire</option>
+                <option value="emerald">Pokemon Emerald</option>
             </select>
 
             <p>or choose your own file:<br><input style="padding:.5em; border:2px solid white;" type="file" id="romFile"
@@ -148,7 +150,7 @@
         </div>
         <hr>
         Ver. 20210114 | <a target="_blank"
-            href="https://github.com/44670/vba-next-wasm">https://github.com/44670/vba-next-wasm</a>
+            href="https://github.com/greymesa/GBA-emu-pkmn">https://github.com/44670/GBA-emu-pkmn</a>
         <div id="ios-hint" hidden>
             Due to limitations of iOS, please <b>add this page to the home screen</b> and launch it from the home screen icon to enable features including savegame and full screen.
             <p style="text-align: center;">👇</p>
